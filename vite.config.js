@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/lifebridge-ai/'
+  base: '/lifebrid-ai-disaster-response-2026/'
 });
