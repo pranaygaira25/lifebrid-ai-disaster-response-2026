@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeBridge AI — Emergency Response & Disaster Assistant</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./css/style.css">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div id="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside>
+      <div>
+        <div class="brand-section">
+          <div class="logo-icon">L</div>
+          <div>
+            <span class="brand-title">LifeBridge AI</span>
+            <span class="brand-subtitle">Agents for Good</span>
+          </div>
+        </div>
+        
+        <ul class="nav-links">
+          <li class="nav-item active" data-tab="dashboard">
+            <button>
+              <i data-lucide="layout-dashboard"></i>
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li class="nav-item" data-tab="map-view">
+            <button>
+              <i data-lucide="map"></i>
+              <span>Emergency Map</span>
+            </button>
+          </li>
+          <li class="nav-item" data-tab="checklists">
+            <button>
+              <i data-lucide="check-square"></i>
+              <span>Preparedness</span>
+            </button>
+          </li>
+          <li class="nav-item" data-tab="missing-persons">
+            <button>
+              <i data-lucide="users"></i>
+              <span>Missing Persons</span>
+            </button>
+          </li>
+          <li class="nav-item" data-tab="drills">
+            <button>
+              <i data-lucide="graduation-cap"></i>
+              <span>Survival Drills</span>
+            </button>
+          </li>
+          <li class="nav-item" data-tab="volunteer">
+            <button>
+              <i data-lucide="heart"></i>
+              <span>Volunteer Hub</span>
+            </button>
+          </li>
+          <li class="nav-item responder-btn" data-tab="responder">
+            <button>
+              <i data-lucide="shield-alert"></i>
+              <span>Responder Portal</span>
+            </button>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- System Status Section -->
+      <div class="system-status">
+        <div class="status-row">
+          <span>Network Status</span>
+          <span id="network-badge"><span class="status-dot"></span>Online</span>
+        </div>
+        <div class="status-row">
+          <span>Siren Synth</span>
+          <span id="siren-status-text" style="color: var(--color-cyan);">Ready</span>
+        </div>
+        <div class="status-row">
+          <span>System Power</span>
+          <div class="battery-display">
+            <i data-lucide="battery-charging" style="color: var(--color-green); width: 16px; height: 16px;"></i>
+            <span id="battery-level">100%</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Container -->
+    <main>
+      
+      <!-- Header -->
+      <header>
+        <div class="header-title-sec">
+          <h1 id="page-title">Dashboard Overview</h1>
+        </div>
+        
+        <div class="header-actions">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-muted);">
+            <span>Offline Simulator</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="offline-toggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          
+          <button class="sos-trigger-btn" id="sos-btn">
+            <i data-lucide="alert-triangle"></i>
+            <span>ACTIVATE SOS</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Alert Ticker -->
+      <div class="alert-ticker">
+        <span class="alert-badge">CRITICAL WARNING</span>
+        <div class="ticker-wrap">
+          <div class="ticker-content" id="live-ticker-text">
+            WEATHER ALERT: Heavy Monsoon waterlogging reported near Richmond Town underpass. Traffic blocks on MG Road. Emergency relief camps are now open.
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Contents -->
+      
+      <!-- 1. DASHBOARD OVERVIEW -->
+      <div class="tab-content active" id="dashboard-tab">
+        <div class="grid-dashboard">
+          
+          <!-- Metric Cards -->
+          <div class="col-3 glass-panel metric-card" style="--accent: var(--color-cyan);">
+            <div class="metric-info">
+              <h3>Open Shelters</h3>
+              <div class="metric-value" id="count-shelters">8</div>
+            </div>
+            <i class="metric-icon" data-lucide="home"></i>
+          </div>
+          
+          <div class="col-3 glass-panel metric-card" style="--accent: var(--color-red);">
+            <div class="metric-info">
+              <h3>Active Hazards</h3>
+              <div class="metric-value" id="count-hazards">5</div>
+            </div>
+            <i class="metric-icon" data-lucide="alert-octagon"></i>
+          </div>
+          
+          <div class="col-3 glass-panel metric-card" style="--accent: var(--color-green);">
+            <div class="metric-info">
+              <h3>Hospitals Available</h3>
+              <div class="metric-value" id="count-hospitals">6</div>
+            </div>
+            <i class="metric-icon" data-lucide="heart-pulse"></i>
+          </div>
+          
+          <div class="col-3 glass-panel metric-card" style="--accent: var(--color-purple);">
+            <div class="metric-info">
+              <h3>Volunteers Active</h3>
+              <div class="metric-value" id="count-volunteers">24</div>
+            </div>
+            <i class="metric-icon" data-lucide="heart"></i>
+          </div>
+
+          <!-- Quick Actions & Chat Assistant -->
+          <div class="col-8 glass-panel" style="padding: 20px;">
+            <div class="panel-header">
+              <h2><i data-lucide="zap" style="color: var(--color-cyan);"></i> Quick Emergency Actions</h2>
+            </div>
+            <div class="quick-actions-grid">
+              <button class="action-btn" id="action-route">
+                <div class="action-icon"><i data-lucide="navigation"></i></div>
+                <h4>Find Safe Route</h4>
+                <p>Map out a route avoiding active floods, blocks, or hazard zones.</p>
+              </button>
+              <button class="action-btn" id="action-report">
+                <div class="action-icon" style="color: var(--color-orange);"><i data-lucide="map-pin"></i></div>
+                <h4>Report Hazard Overlay</h4>
+                <p>Tag blocked roads, flood heights, or accidents on the map.</p>
+              </button>
+              <button class="action-btn" id="action-checklist">
+                <div class="action-icon" style="color: var(--color-green);"><i data-lucide="clipboard-list"></i></div>
+                <h4>Supplies Checklist</h4>
+                <p>Ensure you have all items needed for offline preparedness.</p>
+              </button>
+              <button class="action-btn" id="action-drill">
+                <div class="action-icon" style="color: var(--color-purple);"><i data-lucide="shield-check"></i></div>
+                <h4>Interactive Drills</h4>
+                <p>Train yourself on earthquake and flood survival protocols.</p>
+              </button>
+            </div>
+          </div>
+
+          <div class="col-4 glass-panel chat-widget-container">
+            <div class="panel-header" style="margin-bottom: 0; padding: 12px 16px; border-bottom: 1px solid var(--border-light);">
+              <h2><i data-lucide="bot" style="color: var(--color-cyan);"></i> LifeBridge AI Assistant</h2>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <div class="message-bubble assistant">
+                Hello! I am your Emergency Assistant. Tell me how I can help you, or select one of the prompts below.
+                <button class="tts-btn" onclick="speakText(this)"><i data-lucide="volume-2" style="width: 14px; height: 14px;"></i></button>
+              </div>
+            </div>
+            <div>
+              <div class="chat-suggestions">
+                <span class="suggest-chip" data-query="where is the nearest open shelter?">Nearest Relief Camp</span>
+                <span class="suggest-chip" data-query="is MG Road safe to travel?">Check MG Road</span>
+                <span class="suggest-chip" data-query="how to stop severe bleeding?">First Aid Help</span>
+              </div>
+              <form class="chat-input-area" id="chat-form">
+                <input type="text" id="chat-input" placeholder="Ask AI: e.g. nearest medical aid..." autocomplete="off">
+                <button type="submit"><i data-lucide="send" style="width: 16px; height: 16px;"></i></button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Live Feed/Updates -->
+          <div class="col-12 glass-panel" style="padding: 20px;">
+            <div class="panel-header">
+              <h2><i data-lucide="bell" style="color: var(--color-orange);"></i> Live Incident Feed & Bulletins</h2>
+              <span id="live-feed-count" style="font-size: 12px; color: var(--color-text-muted);">Syncing live...</span>
+            </div>
+            <div style="max-height: 250px; overflow-y: auto;">
+              <table class="responder-alert-table" id="dashboard-feed-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Type</th>
+                    <th>Location</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filled dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- 2. EMERGENCY MAP VIEW -->
+      <div class="tab-content" id="map-view-tab" style="padding: 0;">
+        <div class="map-container-layout">
+          <div id="map"></div>
+          
+          <div class="map-sidebar">
+            <div>
+              <h3 style="font-size: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="sliders" style="color: var(--color-cyan); width: 18px;"></i> Map Layers & Filters
+              </h3>
+              
+              <div class="map-filter-group">
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" id="layer-shelters" checked>
+                  <span>Emergency Shelters</span>
+                </label>
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" id="layer-hazards" checked>
+                  <span>Road Blocks & Hazards</span>
+                </label>
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" id="layer-hospitals" checked>
+                  <span>Hospitals & Medical Centers</span>
+                </label>
+                <label class="filter-checkbox-label">
+                  <input type="checkbox" id="layer-volunteers" checked>
+                  <span>Volunteer Dispatch Hubs</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="route-planner-box">
+              <h3 style="font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="compass" style="color: var(--color-green); width: 16px;"></i> Safe Route Planner
+              </h3>
+              <p style="font-size: 11px; color: var(--color-text-muted); margin-bottom: 12px;">
+                Finds the shortest route avoiding active flood zones and blocked roads.
+              </p>
+              
+              <div class="route-steps">
+                <div class="route-input-group">
+                  <label>START POINT</label>
+                  <div class="route-location-display" id="route-start-display">
+                    <span>Click on map to select...</span>
+                    <i data-lucide="map-pin" style="color: var(--color-cyan); width: 12px;"></i>
+                  </div>
+                </div>
+                
+                <div class="route-input-group">
+                  <label>END POINT</label>
+                  <div class="route-location-display" id="route-end-display">
+                    <span>Click on map to select...</span>
+                    <i data-lucide="flag" style="color: var(--color-red); width: 12px;"></i>
+                  </div>
+                </div>
+              </div>
+              
+              <button class="btn-primary" id="btn-calc-route" style="margin-top: 16px;">Find Safest Path</button>
+              <button class="btn-secondary" id="btn-clear-route" style="margin-top: 8px;">Clear Route</button>
+              
+              <div class="routing-instructions" id="route-instructions-box" style="display: none;">
+                <!-- Instructions added here -->
+              </div>
+            </div>
+
+            <div style="background: rgba(249, 115, 22, 0.05); border: 1px solid rgba(249, 115, 22, 0.15); border-radius: 12px; padding: 12px; font-size: 11.5px;">
+              <span style="font-weight: 700; color: var(--color-orange); display: block; margin-bottom: 4px;">REPORT AN INCIDENT:</span>
+              Double-click anywhere on the map to place an emergency alert or report a road block instantly.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PREPAREDNESS CHECKLISTS -->
+      <div class="tab-content" id="checklists-tab">
+        <div class="glass-panel" style="padding: 24px; max-width: 800px; margin: 0 auto;">
+          <div class="panel-header">
+            <h2><i data-lucide="clipboard-check" style="color: var(--color-green);"></i> Disaster Preparedness Supplies Checklist</h2>
+          </div>
+          
+          <div class="checklist-category-nav">
+            <button class="checklist-cat-btn active" data-cat="flood">Flooding Preparedness</button>
+            <button class="checklist-cat-btn" data-cat="earthquake">Earthquake Safety</button>
+            <button class="checklist-cat-btn" data-cat="cyclone">Cyclone Kit</button>
+            <button class="checklist-cat-btn" data-cat="accident">Road Incident First Aid</button>
+          </div>
+
+          <div class="checklist-progress-container">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600;">
+              <span>Preparedness Progress</span>
+              <span id="checklist-progress-text">0% Completed</span>
+            </div>
+            <div class="checklist-progress-bar">
+              <div class="checklist-progress-fill" id="checklist-progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="checklist-items-list" id="checklist-items-container">
+            <!-- Loaded dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. MISSING PERSONS BOARD -->
+      <div class="tab-content" id="missing-persons-tab">
+        <div class="mp-header">
+          <div class="mp-controls">
+            <input type="text" id="mp-search-input" class="mp-search" placeholder="Search missing persons by name, age, or location...">
+            <button class="btn-primary" id="btn-report-missing-toggle" style="width: auto; margin-top: 0; padding: 0 20px;">
+              <i data-lucide="user-plus" style="display: inline; vertical-align: middle; margin-right: 6px; width: 16px;"></i> File Missing Report
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Report Panel (Hidden by default) -->
+        <div id="missing-report-panel" class="glass-panel" style="display: none; padding: 24px; margin-bottom: 24px; max-width: 600px;">
+          <div class="panel-header">
+            <h2><i data-lucide="file-text" style="color: var(--color-cyan);"></i> File New Missing Person Report</h2>
+            <button id="btn-close-mp-report" class="btn-secondary" style="width: auto; padding: 4px 10px;">Close</button>
+          </div>
+          <form id="mp-report-form">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="mp-name" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div class="form-group">
+                <label>Age</label>
+                <input type="number" id="mp-age" class="form-control" placeholder="e.g. 35" required>
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <select id="mp-gender" class="form-control" required style="background-color: var(--bg-panel-solid);">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Last Seen Location / Area</label>
+              <input type="text" id="mp-last-seen" class="form-control" placeholder="e.g. Near Central Park Bridge" required>
+            </div>
+            <div class="form-group">
+              <label>Key Features / Details</label>
+              <textarea id="mp-details" class="form-control" rows="3" placeholder="e.g. Wearing a blue hoodie, eyeglasses, birthmark on left arm."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Emergency Contact (Name & Phone)</label>
+              <input type="text" id="mp-contact" class="form-control" placeholder="e.g. Jane Doe (+1 555-0199)" required>
+            </div>
+            <button type="submit" class="btn-primary">Register Report</button>
+          </form>
+        </div>
+
+        <div class="mp-grid" id="mp-grid-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- 5. TRAINING DRILLS -->
+      <div class="tab-content" id="drills-tab">
+        <!-- Start Drill Card -->
+        <div class="glass-panel drill-start-card" id="drill-welcome-screen">
+          <div class="drill-icon-header">🛡️</div>
+          <h2>Interactive Disaster Preparedness Drills</h2>
+          <p style="color: var(--color-text-muted); margin: 16px 0 30px; font-size: 14px; line-height: 1.6;">
+            Learn safety procedures by participating in simulated branching emergency scenarios. Gain critical response knowledge for earthquakes, floods, and road accidents.
+          </p>
+          <div style="display: flex; gap: 16px; justify-content: center;">
+            <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="startDrill('earthquake')">Start Earthquake Drill</button>
+            <button class="btn-primary" style="width: auto; padding: 12px 24px; background: var(--color-orange); color: white;" onclick="startDrill('flood')">Start Flood Drill</button>
+          </div>
+        </div>
+
+        <!-- Active Drill Card -->
+        <div class="glass-panel" id="drill-active-screen" style="display: none; max-width: 650px; margin: 30px auto; padding: 24px;">
+          <div class="panel-header" style="margin-bottom: 12px;">
+            <h2 id="drill-title"><i data-lucide="activity" style="color: var(--color-cyan);"></i> Scenario</h2>
+            <span id="drill-progress" style="font-family: var(--font-mono); font-size: 13px; color: var(--color-cyan);">Question 1/4</span>
+          </div>
+          
+          <div class="glass-panel drill-question-box">
+            <p id="drill-scenario-text">Scenario description goes here...</p>
+          </div>
+
+          <div class="drill-choices-container" id="drill-choices-container">
+            <!-- Buttons go here -->
+          </div>
+
+          <div class="drill-feedback" id="drill-feedback-box">
+            <!-- Feedback content -->
+          </div>
+          
+          <button class="btn-primary" id="drill-next-btn" style="margin-top: 16px; display: none;">Continue</button>
+        </div>
+        
+        <!-- Score screen -->
+        <div class="glass-panel drill-start-card" id="drill-score-screen" style="display: none;">
+          <div class="drill-icon-header" id="drill-score-emoji">🏆</div>
+          <h2 id="drill-score-title">Drill Completed!</h2>
+          <p id="drill-score-text" style="color: var(--color-text-muted); margin: 16px 0 30px; font-size: 14px; line-height: 1.6;">
+            Your final survival rating is...
+          </p>
+          <button class="btn-primary" style="width: auto; padding: 12px 24px;" onclick="resetDrillHub()">Return to Drill Center</button>
+        </div>
+      </div>
+
+      <!-- 6. VOLUNTEER HUB -->
+      <div class="tab-content" id="volunteer-tab">
+        <div class="matchmaker-columns">
+          
+          <!-- Column 1: Request Supplies / Aid -->
+          <div class="glass-panel" style="padding: 24px;">
+            <div class="panel-header">
+              <h2><i data-lucide="hand-helping" style="color: var(--color-orange);"></i> Need Help? Request Assistance</h2>
+            </div>
+            <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 16px;">
+              Request emergency provisions, medical first aid, rescue assistance, or power supply.
+            </p>
+            <form id="help-request-form">
+              <div class="form-group">
+                <label>Contact Person Name</label>
+                <input type="text" id="help-req-name" class="form-control" placeholder="e.g. Mary Watson" required>
+              </div>
+              <div class="form-group">
+                <label>Emergency Category</label>
+                <select id="help-req-category" class="form-control" style="background-color: var(--bg-panel-solid);">
+                  <option value="Supplies">Emergency Supplies (Food/Water)</option>
+                  <option value="Medical">Medical First Aid</option>
+                  <option value="Rescue">Shelter Evacuation / Rescue</option>
+                  <option value="Power">Power / Charging Source</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Location / Landmark</label>
+                <input type="text" id="help-req-landmark" class="form-control" placeholder="e.g. Corner of Brigade Road, Richmond Town" required>
+              </div>
+              <div class="form-group">
+                <label>Urgency Level</label>
+                <select id="help-req-urgency" class="form-control" style="background-color: var(--bg-panel-solid);">
+                  <option value="Critical">Critical (Immediate Rescue/Medical)</option>
+                  <option value="High">High (Supplies Needed Today)</option>
+                  <option value="Medium">Medium (General Assistance)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Details / Quantity</label>
+                <textarea id="help-req-details" class="form-control" rows="3" placeholder="e.g. Need drinking water for 3 elderly individuals and baby formula." required></textarea>
+              </div>
+              <button type="submit" class="btn-primary" style="background: var(--color-orange); color: white;">Submit Assistance Request</button>
+            </form>
+          </div>
+
+          <!-- Column 2: Volunteer Registry & Active Matches -->
+          <div class="glass-panel" style="padding: 24px;">
+            <div class="panel-header">
+              <h2><i data-lucide="award" style="color: var(--color-purple);"></i> Volunteer Registry & Dispatch</h2>
+            </div>
+            
+            <div id="volunteer-registration-box">
+              <p style="font-size: 12px; color: var(--color-text-muted); margin-bottom: 16px;">
+                Sign up as an active citizen volunteer to distribute food, coordinate shelters, or assist medical responders.
+              </p>
+              <form id="volunteer-signup-form">
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <input type="text" id="vol-name" class="form-control" placeholder="e.g. Robert Smith" required>
+                </div>
+                <div class="form-group">
+                  <label>Specialization / Skillset</label>
+                  <select id="vol-skill" class="form-control" style="background-color: var(--bg-panel-solid);">
+                    <option value="First Aid">First Aid / Medical Care</option>
+                    <option value="Logistics">Supply Distribution / Logistics</option>
+                    <option value="Search">Search & Rescue Assistance</option>
+                    <option value="Comms">Communications & Admin</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Active Area / Region</label>
+                  <input type="text" id="vol-area" class="form-control" placeholder="e.g. MG Road Metro Area" required>
+                </div>
+                <button type="submit" class="btn-primary" style="background: var(--color-purple); color: white;">Register as Volunteer</button>
+              </form>
+            </div>
+            
+            <div style="margin-top: 24px;">
+              <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--color-purple);">Active Community Requests</h3>
+              <div id="active-matches-container" style="max-height: 250px; overflow-y: auto;">
+                <!-- Dynamically loaded request items -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 7. FIRST RESPONDER PORTAL -->
+      <div class="tab-content" id="responder-tab">
+        <div class="grid-dashboard">
+          
+          <div class="col-8 glass-panel" style="padding: 20px;">
+            <div class="panel-header">
+              <h2><i data-lucide="shield-alert" style="color: var(--color-purple);"></i> Incoming Emergency SOS & Hazards</h2>
+              <span style="font-size: 12px; color: var(--color-purple);">Dispatcher Control Console</span>
+            </div>
+            <div style="max-height: 450px; overflow-y: auto;">
+              <table class="responder-alert-table" id="responder-alerts-table">
+                <thead>
+                  <tr>
+                    <th>Alert ID</th>
+                    <th>Type</th>
+                    <th>Details</th>
+                    <th>Location</th>
+                    <th>Urgency</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Loaded dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="col-4 glass-panel" style="padding: 20px;">
+            <div class="panel-header">
+              <h2><i data-lucide="plus-circle" style="color: var(--color-cyan);"></i> Open New Shelter</h2>
+            </div>
+            <form id="responder-shelter-form">
+              <div class="form-group">
+                <label>Shelter Name</label>
+                <input type="text" id="sh-name" class="form-control" placeholder="e.g. St. Jude High School" required>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                  <label>Latitude</label>
+                  <input type="number" step="0.0001" id="sh-lat" class="form-control" placeholder="12.9716" required>
+                </div>
+                <div class="form-group">
+                  <label>Longitude</label>
+                  <input type="number" step="0.0001" id="sh-lng" class="form-control" placeholder="77.5946" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Total Capacity (People)</label>
+                <input type="number" id="sh-capacity" class="form-control" placeholder="e.g. 300" required>
+              </div>
+              <div class="form-group">
+                <label>Supplies / Utilities</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px;">
+                  <label><input type="checkbox" id="sh-food" checked> Food & Water</label>
+                  <label><input type="checkbox" id="sh-medical" checked> Medical Staff</label>
+                  <label><input type="checkbox" id="sh-power" checked> Generator Power</label>
+                  <label><input type="checkbox" id="sh-pets"> Pet Friendly</label>
+                </div>
+              </div>
+              <button type="submit" class="btn-primary">Add Shelter to Map</button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- SOS Overlay Modal -->
+  <div id="sos-overlay">
+    <div class="sos-modal-content">
+      <div class="sos-title">⚠️ EMERGENCY SOS ACTIVE ⚠️</div>
+      <p style="font-size: 14px; margin-bottom: 20px;">
+        Broadcasting distress coordinates to all nearest rescue operations.
+      </p>
+      
+      <div class="sos-gps-box">
+        <div>COORDINATES: <span id="sos-coordinates">Locating via GPS...</span></div>
+        <div style="margin-top: 4px; font-size: 11px; opacity: 0.8;">ACCURACY: ±15m</div>
+      </div>
+
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 16px; text-align: left; margin-bottom: 20px;">
+        <span style="font-weight: 700; color: var(--color-red); display: block; margin-bottom: 4px;">BROADCAST MESSAGE:</span>
+        <span id="sos-broadcast-text" style="font-size: 12.5px; font-style: italic; color: #fca5a5;">
+          "Emergency! SOS alert broadcasted from LifeBridge AI App. Sender needs immediate support at GPS coordinates."
+        </span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn-secondary" id="btn-toggle-siren-sound" style="border-color: var(--color-cyan); color: var(--color-cyan);">
+          <i data-lucide="volume-x" style="display: inline-block; vertical-align: middle; margin-right: 6px; width: 16px;"></i> Mute Siren Audio
+        </button>
+        <button class="btn-primary" id="btn-deactivate-sos" style="background: #1f2937; color: white; border: 1px solid var(--border-light); margin-top: 0;">
+          Cancel Distress Signal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Modular Scripts -->
+  <script type="module" src="./js/app.js"></script>
+
+</body>
+</html>
